@@ -1,3 +1,12 @@
+# Линтер
+
+Для успешной работы линтера должны быть локально установлены:
+1) Docker: https://docs.docker.com/get-docker/
+2) jq: https://jqlang.github.io/jq/download/
+
+Запуск golangci-lint: make golangci-lint-run
+Удаления всех сгенерированный golangci-lint файлов: make golangci-lint-clean
+
 # go-musthave-diploma-tpl
 
 Шаблон репозитория для индивидуального дипломного проекта курса «Go-разработчик»
