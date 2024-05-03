@@ -1,0 +1,11 @@
+services:
+  postgres:
+    image: postgres:16.1
+    environment:
+      POSTGRES_DB: "gophermart"
+      POSTGRES_USER: "nikolos"
+      POSTGRES_PASSWORD: "abc123"
+    volumes:
+      - ./db/data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
