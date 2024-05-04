@@ -18,7 +18,7 @@ type config struct {
 func (c *config) InitEnv() error {
 	err := env.Parse(c)
 	if err != nil {
-		return fmt.Errorf("не удалось разобрать уровень логирования: %w", err)
+		return fmt.Errorf("не удалось спарсить env: %w", err)
 	}
 
 	return nil
