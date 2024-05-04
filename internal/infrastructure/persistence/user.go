@@ -19,3 +19,7 @@ func (r *SQLUserRepository) Save(user *entity.User) error {
 	// Реализация сохранения пользователя в базу данных
 	return fmt.Errorf("qq")
 }
+
+func (r *SQLUserRepository) ExistsByLogin(login string) bool {
+	return true
+}

@@ -3,8 +3,8 @@ package service
 import (
 	"fmt"
 
+	"github.com/NikolosHGW/gophermart/internal/app/repository"
 	"github.com/NikolosHGW/gophermart/internal/domain/entity"
-	"github.com/NikolosHGW/gophermart/internal/domain/repository"
 	"github.com/NikolosHGW/gophermart/internal/domain/usecase"
 	"golang.org/x/crypto/bcrypt"
 )
