@@ -50,6 +50,8 @@ func run() error {
 
 	r := router.NewRouter(handlers)
 
+	myLogger.Info("Running server", zap.String("address", config.GetRunAddress()))
+
 	err = http.ListenAndServe(config.GetRunAddress(), r)
 
 	return fmt.Errorf("ошибка при запуске сервера: %w", err)
