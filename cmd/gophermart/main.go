@@ -45,7 +45,7 @@ func run() error {
 	userService := service.NewUserService(userRepo, myLogger)
 
 	handlers := &handler.Handlers{
-		UserHandler: handler.NewUserHandler(userService),
+		UserHandler: handler.NewUserHandler(userService, myLogger),
 	}
 
 	r := router.NewRouter(handlers)

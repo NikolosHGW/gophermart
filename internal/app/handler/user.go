@@ -8,20 +8,23 @@ import (
 
 	"github.com/NikolosHGW/gophermart/internal/domain"
 	"github.com/NikolosHGW/gophermart/internal/domain/usecase"
+	"go.uber.org/zap"
 )
 
 type UserHandler struct {
 	userUseCase usecase.UserUseCase
+	logger      *zap.Logger
 }
 
-func NewUserHandler(userUseCase usecase.UserUseCase) *UserHandler {
+func NewUserHandler(userUseCase usecase.UserUseCase, logger *zap.Logger) *UserHandler {
 	return &UserHandler{
 		userUseCase: userUseCase,
+		logger:      logger,
 	}
 }
 
 func (h UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
-	inputData, err := decodeAndValidateUserData(r)
+	inputData, err := decodeAndValidateUserData(r, h.logger)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -45,10 +48,11 @@ type userData struct {
 	Password string `json:"password"`
 }
 
-func decodeAndValidateUserData(r *http.Request) (userData, error) {
+func decodeAndValidateUserData(r *http.Request, logger *zap.Logger) (userData, error) {
 	var data userData
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		return data, fmt.Errorf("ошибка декодирования: %w", err)
+		logger.Info("ошибка декодирования: ", zap.Error(err))
+		return data, fmt.Errorf("ошибка декодирования")
 	}
 	if data.Login == "" || data.Password == "" {
 		return data, errors.New("неверный формат запроса")
