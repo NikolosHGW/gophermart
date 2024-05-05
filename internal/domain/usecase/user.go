@@ -1,7 +1,11 @@
 package usecase
 
-import "github.com/NikolosHGW/gophermart/internal/domain/entity"
+import (
+	"context"
+
+	"github.com/NikolosHGW/gophermart/internal/domain/entity"
+)
 
 type UserUseCase interface {
-	Register(login, password string) (*entity.User, error)
+	Register(ctx context.Context, login, password string) (*entity.User, error)
 }

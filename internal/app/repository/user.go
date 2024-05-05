@@ -1,8 +1,12 @@
 package repository
 
-import "github.com/NikolosHGW/gophermart/internal/domain/entity"
+import (
+	"context"
+
+	"github.com/NikolosHGW/gophermart/internal/domain/entity"
+)
 
 type UserRepository interface {
-	Save(user *entity.User) error
-	ExistsByLogin(string) bool
+	Save(context.Context, *entity.User) error
+	ExistsByLogin(context.Context, string) (bool, error)
 }

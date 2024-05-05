@@ -40,9 +40,9 @@ func run() error {
 		}
 	}()
 
-	userRepo := persistence.NewSQLUserRepository(database)
+	userRepo := persistence.NewSQLUserRepository(database, myLogger)
 
-	userService := service.NewUserService(userRepo)
+	userService := service.NewUserService(userRepo, myLogger)
 
 	handlers := &handler.Handlers{
 		UserHandler: handler.NewUserHandler(userService),
