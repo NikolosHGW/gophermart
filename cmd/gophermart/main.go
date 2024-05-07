@@ -8,6 +8,7 @@ import (
 	"github.com/NikolosHGW/gophermart/internal/app/handler"
 	"github.com/NikolosHGW/gophermart/internal/app/service"
 	"github.com/NikolosHGW/gophermart/internal/infrastructure/config"
+	"github.com/NikolosHGW/gophermart/internal/infrastructure/middleware"
 	"github.com/NikolosHGW/gophermart/internal/infrastructure/persistence"
 	"github.com/NikolosHGW/gophermart/internal/infrastructure/persistence/db"
 	"github.com/NikolosHGW/gophermart/internal/infrastructure/router"
@@ -48,7 +49,11 @@ func run() error {
 		UserHandler: handler.NewUserHandler(userService, myLogger),
 	}
 
-	r := router.NewRouter(handlers)
+	middlewares := &middleware.Middlewares{
+		Logger: middleware.NewLoggerMiddleware(myLogger),
+	}
+
+	r := router.NewRouter(handlers, middlewares)
 
 	myLogger.Info("Running server", zap.String("address", config.GetRunAddress()))
 
