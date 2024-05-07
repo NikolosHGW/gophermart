@@ -10,6 +10,7 @@ func NewRouter(handlers *handler.Handlers, middlewares *middleware.Middlewares) 
 	r := chi.NewRouter()
 
 	r.Use(middlewares.Logger.WithLogging)
+	r.Use(middlewares.Gzip.WithGzip)
 
 	r.Route("/api/user", func(r chi.Router) {
 		r.Post("/register", handlers.UserHandler.RegisterUser)
