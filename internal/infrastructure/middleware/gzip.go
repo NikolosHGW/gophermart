@@ -36,7 +36,7 @@ func (c *compressWriter) Header() http.Header {
 func (c *compressWriter) Write(p []byte) (int, error) {
 	n, err := c.zw.Write(p)
 	if err != nil {
-		return n, fmt.Errorf("ошибка при записи ответа: %w", err)
+		return n, fmt.Errorf("ошибка при записи ответа для compressWriter: %w", err)
 	}
 	return n, nil
 }
@@ -51,7 +51,7 @@ func (c *compressWriter) WriteHeader(statusCode int) {
 func (c *compressWriter) Close() error {
 	err := c.zw.Close()
 	if err != nil {
-		return fmt.Errorf("ошибка при закрытии ответа: %w", err)
+		return fmt.Errorf("ошибка при закрытии ответа для compressWriter: %w", err)
 	}
 	return nil
 }
@@ -64,7 +64,7 @@ type compressReader struct {
 func newCompressReader(r io.ReadCloser) (*compressReader, error) {
 	zr, err := gzip.NewReader(r)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка при чтении запроса: %w", err)
+		return nil, fmt.Errorf("ошибка при чтении запроса при инициализации compressReader: %w", err)
 	}
 
 	return &compressReader{
@@ -76,14 +76,14 @@ func newCompressReader(r io.ReadCloser) (*compressReader, error) {
 func (c compressReader) Read(p []byte) (n int, err error) {
 	n, err = c.zr.Read(p)
 	if err != nil {
-		return n, fmt.Errorf("ошибка при чтении запроса: %w", err)
+		return n, fmt.Errorf("ошибка при чтении запроса для compressReader: %w", err)
 	}
 	return n, nil
 }
 
 func (c *compressReader) Close() error {
 	if err := c.r.Close(); err != nil {
-		return fmt.Errorf("ошибка при закрытии чтения: %w", err)
+		return fmt.Errorf("ошибка при закрытии чтения для compressReader: %w", err)
 	}
 	return nil
 }
@@ -119,10 +119,9 @@ func (gm GzipMiddleware) WithGzip(next http.Handler) http.Handler {
 			ow = cw
 
 			defer func() {
-				if err := cw.Close(); err != nil {
-					gm.logger.Info("ошибка при закрытии compressWriter: %v\n", zap.Error(err))
-					w.WriteHeader(http.StatusInternalServerError)
-					return
+				err := cw.Close()
+				if err != nil {
+					gm.logger.Info("ошибка при закрытии compressWriter", zap.Error(err))
 				}
 			}()
 		}
@@ -138,10 +137,9 @@ func (gm GzipMiddleware) WithGzip(next http.Handler) http.Handler {
 
 			r.Body = cr
 			defer func() {
-				if err := cr.Close(); err != nil {
-					gm.logger.Info("ошибка при закрытии compressReader: %v\n", zap.Error(err))
-					w.WriteHeader(http.StatusInternalServerError)
-					return
+				err := cr.Close()
+				if err != nil {
+					gm.logger.Info("ошибка при закрытии compressReader", zap.Error(err))
 				}
 			}()
 		}
