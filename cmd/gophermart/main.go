@@ -43,7 +43,7 @@ func run() error {
 
 	userRepo := persistence.NewSQLUserRepository(database, myLogger)
 
-	userService := service.NewUserService(userRepo, myLogger)
+	userService := service.NewUserService(userRepo, myLogger, config.GetSecretKey())
 
 	handlers := &handler.Handlers{
 		UserHandler: handler.NewUserHandler(userService, myLogger),

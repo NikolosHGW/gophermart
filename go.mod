@@ -3,6 +3,7 @@ module github.com/NikolosHGW/gophermart
 go 1.21.3
 
 require (
+	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang-migrate/migrate/v4 v4.17.1
 	golang.org/x/crypto v0.20.0
 )

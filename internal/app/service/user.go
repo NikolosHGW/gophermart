@@ -4,24 +4,30 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/NikolosHGW/gophermart/internal/app/repository"
 	"github.com/NikolosHGW/gophermart/internal/domain"
 	"github.com/NikolosHGW/gophermart/internal/domain/entity"
 	"github.com/NikolosHGW/gophermart/internal/domain/usecase"
+	"github.com/golang-jwt/jwt/v4"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
+const TokenExp = time.Hour * 5
+
 type UserService struct {
-	userRepo repository.UserRepository
-	logger   *zap.Logger
+	userRepo  repository.UserRepository
+	logger    *zap.Logger
+	secretKey string
 }
 
-func NewUserService(userRepo repository.UserRepository, logger *zap.Logger) usecase.UserUseCase {
+func NewUserService(userRepo repository.UserRepository, logger *zap.Logger, secretKey string) usecase.UserUseCase {
 	return &UserService{
-		userRepo: userRepo,
-		logger:   logger,
+		userRepo:  userRepo,
+		logger:    logger,
+		secretKey: secretKey,
 	}
 }
 
@@ -50,4 +56,26 @@ func (s *UserService) Register(ctx context.Context, login, password string) (*en
 	}
 
 	return user, nil
+}
+
+func (s *UserService) GenerateJWT(user *entity.User) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(TokenExp)),
+		},
+		UserID: user.ID,
+	})
+
+	tokenString, err := token.SignedString([]byte(s.secretKey))
+	if err != nil {
+		s.logger.Info("ошибки при создании подписи токена: ", zap.Error(err))
+		return "", fmt.Errorf("ошибки при создании подписи токена")
+	}
+
+	return tokenString, nil
+}
+
+type Claims struct {
+	jwt.RegisteredClaims
+	UserID int
 }

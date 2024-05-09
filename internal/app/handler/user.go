@@ -30,7 +30,7 @@ func (h UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.userUseCase.Register(r.Context(), inputData.Login, inputData.Password)
+	user, err := h.userUseCase.Register(r.Context(), inputData.Login, inputData.Password)
 	if err != nil {
 		if errors.Is(err, domain.ErrLoginAlreadyExists) {
 			http.Error(w, err.Error(), http.StatusConflict)
@@ -39,6 +39,15 @@ func (h UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	token, err := h.userUseCase.GenerateJWT(user)
+	if err != nil {
+		http.Error(w, "Ошибка при создании токена", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Authorization", "Bearer "+token)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 }
