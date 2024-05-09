@@ -60,5 +60,9 @@ func run() error {
 
 	err = http.ListenAndServe(config.GetRunAddress(), r)
 
-	return fmt.Errorf("ошибка при запуске сервера: %w", err)
+	if err != nil {
+		return fmt.Errorf("ошибка при запуске сервера: %w", err)
+	}
+
+	return nil
 }
