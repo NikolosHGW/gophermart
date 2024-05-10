@@ -66,6 +66,10 @@ func (s *UserService) GenerateJWT(user *entity.User) (string, error) {
 		UserID: user.ID,
 	})
 
+	if s.secretKey == "" {
+		s.logger.Info("для создании подписи токена секретный ключ пустой")
+		return "", fmt.Errorf("ошибки при создании токена")
+	}
 	tokenString, err := token.SignedString([]byte(s.secretKey))
 	if err != nil {
 		s.logger.Info("ошибки при создании подписи токена: ", zap.Error(err))
