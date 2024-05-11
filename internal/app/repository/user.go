@@ -9,4 +9,5 @@ import (
 type UserRepository interface {
 	Save(context.Context, *entity.User) error
 	ExistsByLogin(context.Context, string) (bool, error)
+	FindByLogin(context.Context, string) (*entity.User, error)
 }

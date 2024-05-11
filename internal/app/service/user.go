@@ -58,6 +58,23 @@ func (s *UserService) Register(ctx context.Context, login, password string) (*en
 	return user, nil
 }
 
+func (s *UserService) Authenticate(ctx context.Context, login, password string) (*entity.User, error) {
+	user, err := s.userRepo.FindByLogin(ctx, login)
+	if err != nil {
+		if errors.Is(err, domain.ErrInvalidCredentials) {
+			return nil, domain.ErrInvalidCredentials
+		}
+		return nil, fmt.Errorf("ошибка сервера: %w", err)
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
+		return nil, domain.ErrInvalidCredentials
+	}
+
+	return user, nil
+}
+
 func (s *UserService) GenerateJWT(user *entity.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		RegisteredClaims: jwt.RegisteredClaims{

@@ -426,6 +426,9 @@ issues:
     - linters:
       - wrapcheck
       path: _test\.go$
+    - linters:
+      - dupl
+      path: "internal/app/handler/.*\\.go"
   fix: false
   max-issues-per-linter: 0
   max-same-issues: 0

@@ -13,8 +13,12 @@ import (
 	"go.uber.org/zap"
 )
 
-const existLogin = "user1"
-const validToken = "abc"
+const (
+	existLogin      = "user1"
+	validToken      = "abc"
+	correctLogin    = "user"
+	correctPassword = "abc"
+)
 
 type MockUserService struct{}
 
@@ -32,6 +36,18 @@ func (m *MockUserService) Register(ctx context.Context, login, password string) 
 
 func (m *MockUserService) GenerateJWT(user *entity.User) (string, error) {
 	return validToken, nil
+}
+
+func (m *MockUserService) Authenticate(ctx context.Context, login, password string) (*entity.User, error) {
+	if correctLogin == login && correctPassword == password {
+		return &entity.User{
+			ID:       1,
+			Login:    login,
+			Password: password,
+		}, nil
+	}
+
+	return nil, domain.ErrInvalidCredentials
 }
 
 func TestUserHandler_RegisterUser(t *testing.T) {
@@ -100,6 +116,60 @@ func TestUserHandler_RegisterUser(t *testing.T) {
 			if tt.expectedStatus == http.StatusOK {
 				authHeader := resp.Header.Get("Authorization")
 				expectedAuthHeader := "Bearer " + validToken
+				assert.Equal(t, expectedAuthHeader, authHeader)
+			}
+
+			err = resp.Body.Close()
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestUserHandler_LoginUser(t *testing.T) {
+	tests := []struct {
+		name           string
+		requestJSON    string
+		expectedStatus int
+		expectedToken  string
+	}{
+		{
+			name:           "Положительный тест: успешная аутентификация",
+			requestJSON:    `{ "login": "user", "password": "abc" }`,
+			expectedStatus: http.StatusOK,
+			expectedToken:  validToken,
+		},
+		{
+			name:           "Отрицательный тест: неверные учетные данные",
+			requestJSON:    `{ "login": "user", "password": "wrong" }`,
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "Отрицательный тест: неверный формат запроса (нет ни логина, ни пароля)",
+			requestJSON:    `{ "status": "user", "id": "abc" }`,
+			expectedStatus: http.StatusBadRequest,
+		},
+	}
+
+	logger, _ := zap.NewDevelopment()
+	s := &MockUserService{}
+	h := NewUserHandler(s, logger)
+
+	server := httptest.NewServer(http.HandlerFunc(h.LoginUser))
+	defer server.Close()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := http.NewRequest(http.MethodPost, server.URL, bytes.NewBuffer([]byte(tt.requestJSON)))
+			assert.NoError(t, err)
+
+			resp, err := http.DefaultClient.Do(req)
+			assert.NoError(t, err)
+
+			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
+
+			if tt.expectedStatus == http.StatusOK {
+				authHeader := resp.Header.Get("Authorization")
+				expectedAuthHeader := "Bearer " + tt.expectedToken
 				assert.Equal(t, expectedAuthHeader, authHeader)
 			}
 

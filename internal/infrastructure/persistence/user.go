@@ -2,8 +2,11 @@ package persistence
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
+	"github.com/NikolosHGW/gophermart/internal/domain"
 	"github.com/NikolosHGW/gophermart/internal/domain/entity"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
@@ -37,4 +40,20 @@ func (r *SQLUserRepository) ExistsByLogin(ctx context.Context, login string) (bo
 		return false, fmt.Errorf("временная ошибка сервиса, попробуйте ещё раз позже")
 	}
 	return exists, nil
+}
+
+func (r *SQLUserRepository) FindByLogin(ctx context.Context, login string) (*entity.User, error) {
+	var user entity.User
+	query := `SELECT id, login, password FROM users WHERE login = $1`
+	err := r.db.GetContext(ctx, &user, query, login)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, domain.ErrInvalidCredentials
+		}
+
+		r.logger.Info("ошибка при поиске пользователя: ", zap.Error(err))
+
+		return nil, fmt.Errorf("ошибка при поиске пользователя")
+	}
+	return &user, nil
 }
