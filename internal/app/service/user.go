@@ -76,7 +76,7 @@ func (s *UserService) Authenticate(ctx context.Context, login, password string) 
 }
 
 func (s *UserService) GenerateJWT(user *entity.User) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, usecase.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(TokenExp)),
 		},
@@ -94,9 +94,4 @@ func (s *UserService) GenerateJWT(user *entity.User) (string, error) {
 	}
 
 	return tokenString, nil
-}
-
-type Claims struct {
-	jwt.RegisteredClaims
-	UserID int
 }

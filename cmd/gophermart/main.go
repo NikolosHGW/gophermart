@@ -52,6 +52,7 @@ func run() error {
 	middlewares := &middleware.Middlewares{
 		Logger: middleware.NewLoggerMiddleware(myLogger),
 		Gzip:   middleware.NewGzipMiddleware(myLogger),
+		Auth:   middleware.NewAuthMiddleware(config.GetSecretKey()),
 	}
 
 	r := router.NewRouter(handlers, middlewares)
