@@ -23,13 +23,13 @@ func (am *AuthMiddleware) WithAuth(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			http.Error(w, "Необходима аутентификация", http.StatusUnauthorized)
+			http.Error(w, "пользователь не аутентифицирован", http.StatusUnauthorized)
 			return
 		}
 
 		bearerToken := strings.Split(authHeader, " ")
 		if len(bearerToken) != fullTokenLength {
-			http.Error(w, "Неверный формат токена", http.StatusUnauthorized)
+			http.Error(w, "неверный формат токена", http.StatusUnauthorized)
 			return
 		}
 
@@ -41,7 +41,7 @@ func (am *AuthMiddleware) WithAuth(h http.Handler) http.Handler {
 		})
 
 		if err != nil || !token.Valid {
-			http.Error(w, "Неверный токен", http.StatusUnauthorized)
+			http.Error(w, "неверный токен", http.StatusUnauthorized)
 			return
 		}
 
