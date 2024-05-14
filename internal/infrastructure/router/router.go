@@ -15,6 +15,9 @@ func NewRouter(handlers *handler.Handlers, middlewares *middleware.Middlewares) 
 	r.Route("/api/user", func(r chi.Router) {
 		r.Post("/register", handlers.UserHandler.RegisterUser)
 		r.Post("/login", handlers.UserHandler.LoginUser)
+
+		r.Use(middlewares.Auth.WithAuth)
+		r.Post("/orders", handlers.OrderHandler.UploadOrder)
 	})
 
 	return r

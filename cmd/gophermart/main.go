@@ -42,11 +42,14 @@ func run() error {
 	}()
 
 	userRepo := persistence.NewSQLUserRepository(database, myLogger)
+	orderRepo := persistence.NewSQLOrderRepository(database, myLogger)
 
 	userService := service.NewUserService(userRepo, myLogger, config.GetSecretKey())
+	orderService := service.NewOrderService(orderRepo, myLogger)
 
 	handlers := &handler.Handlers{
-		UserHandler: handler.NewUserHandler(userService, myLogger),
+		UserHandler:  handler.NewUserHandler(userService, myLogger),
+		OrderHandler: handler.NewOrderHandler(orderService, myLogger),
 	}
 
 	middlewares := &middleware.Middlewares{

@@ -1,5 +1,6 @@
 package handler
 
 type Handlers struct {
-	UserHandler *UserHandler
+	UserHandler  *UserHandler
+	OrderHandler *OrderHandler
 }
