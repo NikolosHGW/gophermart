@@ -16,8 +16,7 @@ func NewRouter(handlers *handler.Handlers, middlewares *middleware.Middlewares) 
 		r.Post("/register", handlers.UserHandler.RegisterUser)
 		r.Post("/login", handlers.UserHandler.LoginUser)
 
-		r.Use(middlewares.Auth.WithAuth)
-		r.Post("/orders", handlers.OrderHandler.UploadOrder)
+		r.With(middlewares.Auth.WithAuth).Post("/orders", handlers.OrderHandler.UploadOrder)
 	})
 
 	return r

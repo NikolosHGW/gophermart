@@ -22,8 +22,8 @@ func NewSQLUserRepository(db *sqlx.DB, logger *zap.Logger) *SQLUserRepository {
 }
 
 func (r *SQLUserRepository) Save(ctx context.Context, user *entity.User) error {
-	query := `INSERT INTO users (login, password) VALUES ($1, $2)`
-	_, err := r.db.ExecContext(ctx, query, user.Login, user.Password)
+	query := `INSERT INTO users (login, password) VALUES ($1, $2) RETURNING id`
+	err := r.db.QueryRowxContext(ctx, query, user.Login, user.Password).Scan(&user.ID)
 	if err != nil {
 		return fmt.Errorf("ошибка при сохранении пользователя: %w", err)
 	}

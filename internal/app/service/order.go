@@ -25,7 +25,7 @@ func NewOrderService(orderRepo repository.OrderRepository, logger *zap.Logger) u
 func (s *OrderService) ProcessOrder(ctx context.Context, userID int, orderNumber string) error {
 	exists, err := s.orderRepo.OrderExistsForUser(ctx, userID, orderNumber)
 	if err != nil {
-		s.logger.Error("ошибка при проверке существования заказа", zap.Error(err))
+		s.logger.Info("ошибка при проверке существования заказа", zap.Error(err))
 		return fmt.Errorf("внутренняя ошибка сервера")
 	}
 	if exists {
@@ -34,7 +34,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, userID int, orderNumber
 
 	claimed, err := s.orderRepo.OrderClaimedByAnotherUser(ctx, userID, orderNumber)
 	if err != nil {
-		s.logger.Error("ошибка при проверке заказа у других пользователей", zap.Error(err))
+		s.logger.Info("ошибка при проверке заказа у других пользователей", zap.Error(err))
 		return fmt.Errorf("внутренняя ошибка сервера")
 	}
 	if claimed {
@@ -43,7 +43,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, userID int, orderNumber
 
 	err = s.orderRepo.AddOrder(ctx, userID, orderNumber)
 	if err != nil {
-		s.logger.Error("ошибка при добавлении заказа", zap.Error(err))
+		s.logger.Info("ошибка при добавлении заказа", zap.Error(err))
 		return fmt.Errorf("внутренняя ошибка сервера")
 	}
 

@@ -25,7 +25,7 @@ func NewOrderHandler(orderUseCase usecase.OrderUseCase, logger *zap.Logger) *Ord
 func (h *OrderHandler) UploadOrder(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		h.logger.Error("не удалось прочитать тело запроса", zap.Error(err))
+		h.logger.Info("не удалось прочитать тело запроса", zap.Error(err))
 		http.Error(w, "неверный формат запроса", http.StatusBadRequest)
 		return
 	}
@@ -36,9 +36,9 @@ func (h *OrderHandler) UploadOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, ok := r.Context().Value("userID").(int)
+	userID, ok := r.Context().Value(domain.ContextKey).(int)
 	if !ok {
-		h.logger.Error("userID не найден или неверного типа")
+		h.logger.Info("userID не найден или неверного типа")
 		http.Error(w, "внутренняя ошибка сервера", http.StatusInternalServerError)
 		return
 	}
@@ -53,7 +53,7 @@ func (h *OrderHandler) UploadOrder(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusConflict)
 			return
 		default:
-			h.logger.Error("внутренняя ошибка сервера", zap.Error(err))
+			h.logger.Info("внутренняя ошибка сервера", zap.Error(err))
 			http.Error(w, "внутренняя ошибка сервера", http.StatusInternalServerError)
 			return
 		}
