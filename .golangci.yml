@@ -425,6 +425,7 @@ issues:
       text: "fieldalignment: struct with \\d+ pointer bytes could be \\d+"
     - linters:
       - wrapcheck
+      - errcheck
       path: _test\.go$
     - linters:
       - dupl

@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/NikolosHGW/gophermart/internal/app/repository"
 	"github.com/NikolosHGW/gophermart/internal/domain"
@@ -26,7 +25,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, userID int, orderNumber
 	exists, err := s.orderRepo.OrderExistsForUser(ctx, userID, orderNumber)
 	if err != nil {
 		s.logger.Info("ошибка при проверке существования заказа", zap.Error(err))
-		return fmt.Errorf("внутренняя ошибка сервера")
+		return domain.ErrInternalServer
 	}
 	if exists {
 		return domain.ErrOrderAlreadyUploadedForThisUser
@@ -35,7 +34,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, userID int, orderNumber
 	claimed, err := s.orderRepo.OrderClaimedByAnotherUser(ctx, userID, orderNumber)
 	if err != nil {
 		s.logger.Info("ошибка при проверке заказа у других пользователей", zap.Error(err))
-		return fmt.Errorf("внутренняя ошибка сервера")
+		return domain.ErrInternalServer
 	}
 	if claimed {
 		return domain.ErrOrderAlreadyUploadedByAnotherUser
@@ -44,7 +43,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, userID int, orderNumber
 	err = s.orderRepo.AddOrder(ctx, userID, orderNumber)
 	if err != nil {
 		s.logger.Info("ошибка при добавлении заказа", zap.Error(err))
-		return fmt.Errorf("внутренняя ошибка сервера")
+		return domain.ErrInternalServer
 	}
 
 	return nil

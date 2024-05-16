@@ -2,7 +2,6 @@ package persistence
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/NikolosHGW/gophermart/internal/app/repository"
 	"github.com/NikolosHGW/gophermart/internal/domain"
@@ -25,7 +24,7 @@ func (r *SQLOrderRepository) OrderExistsForUser(ctx context.Context, userID int,
 	err := r.db.QueryRowxContext(ctx, query, userID, orderNumber).Scan(&exists)
 	if err != nil {
 		r.logger.Info("не получилось выполнить запрос на существования заказа", zap.Error(err))
-		return exists, fmt.Errorf("внутренняя ошибка сервера")
+		return exists, domain.ErrInternalServer
 	}
 	return exists, nil
 }
@@ -40,7 +39,7 @@ func (r *SQLOrderRepository) OrderClaimedByAnotherUser(
 	err := r.db.QueryRowxContext(ctx, query, orderNumber, userID).Scan(&exists)
 	if err != nil {
 		r.logger.Info("не получилось выполнить запрос на существования заказа", zap.Error(err))
-		return exists, fmt.Errorf("внутренняя ошибка сервера")
+		return exists, domain.ErrInternalServer
 	}
 	return exists, nil
 }
@@ -50,7 +49,7 @@ func (r *SQLOrderRepository) AddOrder(ctx context.Context, userID int, orderNumb
 	_, err := r.db.ExecContext(ctx, query, userID, orderNumber, domain.StatusNew)
 	if err != nil {
 		r.logger.Info("не получилось добавить заказ", zap.Error(err))
-		return fmt.Errorf("внутренняя ошибка сервера")
+		return domain.ErrInternalServer
 	}
 	return nil
 }
