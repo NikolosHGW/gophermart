@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -88,4 +89,40 @@ func ValidateOrderNumber(number string) bool {
 	}
 
 	return sum%10 == 0
+}
+
+func (h *OrderHandler) GetOrders(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(domain.ContextKey).(int)
+	if !ok {
+		h.logger.Info("userID не найден или неверного типа")
+		http.Error(w, domain.ErrInternalServer.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	orders, err := h.orderUseCase.GetUserOrdersByID(r.Context(), userID)
+	if err != nil {
+		http.Error(w, domain.ErrInternalServer.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if len(orders) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	jsonResponse, err := json.Marshal(orders)
+	if err != nil {
+		h.logger.Info("ошибка при формировании ответа", zap.Error(err))
+		http.Error(w, domain.ErrInternalServer.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(jsonResponse)
+	if err != nil {
+		h.logger.Info("ошибка при отправки json", zap.Error(err))
+		http.Error(w, domain.ErrInternalServer.Error(), http.StatusInternalServerError)
+	}
 }

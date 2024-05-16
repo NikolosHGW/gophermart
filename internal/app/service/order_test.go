@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/NikolosHGW/gophermart/internal/domain"
+	"github.com/NikolosHGW/gophermart/internal/domain/entity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap/zaptest"
@@ -31,6 +32,10 @@ func (_m *OrderRepository) OrderClaimedByAnotherUser(
 func (_m *OrderRepository) AddOrder(ctx context.Context, userID int, orderNumber string) error {
 	ret := _m.Called(ctx, userID, orderNumber)
 	return ret.Error(0)
+}
+
+func (_m *OrderRepository) GetUserOrdersByID(ctx context.Context, userID int) ([]entity.Order, error) {
+	return []entity.Order{}, nil
 }
 
 func TestOrderService_ProcessOrder(t *testing.T) {

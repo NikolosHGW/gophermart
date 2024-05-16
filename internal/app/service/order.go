@@ -5,6 +5,7 @@ import (
 
 	"github.com/NikolosHGW/gophermart/internal/app/repository"
 	"github.com/NikolosHGW/gophermart/internal/domain"
+	"github.com/NikolosHGW/gophermart/internal/domain/entity"
 	"github.com/NikolosHGW/gophermart/internal/domain/usecase"
 	"go.uber.org/zap"
 )
@@ -47,4 +48,12 @@ func (s *OrderService) ProcessOrder(ctx context.Context, userID int, orderNumber
 	}
 
 	return nil
+}
+
+func (s *OrderService) GetUserOrdersByID(ctx context.Context, userID int) ([]entity.Order, error) {
+	orders, err := s.orderRepo.GetUserOrdersByID(ctx, userID)
+	if err != nil {
+		return orders, domain.ErrInternalServer
+	}
+	return orders, nil
 }

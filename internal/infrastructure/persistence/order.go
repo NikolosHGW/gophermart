@@ -5,6 +5,7 @@ import (
 
 	"github.com/NikolosHGW/gophermart/internal/app/repository"
 	"github.com/NikolosHGW/gophermart/internal/domain"
+	"github.com/NikolosHGW/gophermart/internal/domain/entity"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
@@ -52,4 +53,20 @@ func (r *SQLOrderRepository) AddOrder(ctx context.Context, userID int, orderNumb
 		return domain.ErrInternalServer
 	}
 	return nil
+}
+
+func (r *SQLOrderRepository) GetUserOrdersByID(ctx context.Context, userID int) ([]entity.Order, error) {
+	var orders []entity.Order
+	query := `
+	SELECT number, status,
+		to_char(uploaded_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SSOF') as uploaded_at 
+	FROM orders
+	WHERE user_id = $1
+	ORDER BY uploaded_at ASC`
+	err := r.db.SelectContext(ctx, &orders, query, userID)
+	if err != nil {
+		r.logger.Info("не получилось получить список заказов", zap.Error(err))
+		return nil, domain.ErrInternalServer
+	}
+	return orders, nil
 }
