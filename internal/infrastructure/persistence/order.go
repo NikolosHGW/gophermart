@@ -59,7 +59,7 @@ func (r *SQLOrderRepository) GetUserOrdersByID(ctx context.Context, userID int) 
 	var orders []entity.Order
 	query := `
 	SELECT number, status,
-		to_char(uploaded_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SSOF') as uploaded_at 
+		to_char(uploaded_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SSZ') as uploaded_at 
 	FROM orders
 	WHERE user_id = $1
 	ORDER BY uploaded_at ASC`
