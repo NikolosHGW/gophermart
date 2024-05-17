@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-const oneAndAHalfSeconds = 1500
+const timeForContext = 5000
 
 type SQLOrderRepository struct {
 	db     *sqlx.DB
@@ -59,7 +59,7 @@ func (r *SQLOrderRepository) AddOrder(ctx context.Context, userID int, orderNumb
 }
 
 func (r *SQLOrderRepository) GetUserOrdersByID(ctx context.Context, userID int) ([]entity.Order, error) {
-	ctx, cancel := context.WithTimeout(ctx, oneAndAHalfSeconds*time.Millisecond)
+	ctx, cancel := context.WithTimeout(ctx, timeForContext*time.Millisecond)
 	defer cancel()
 	var orders []entity.Order
 	query := `
