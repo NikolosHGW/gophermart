@@ -2,7 +2,6 @@ package persistence
 
 import (
 	"context"
-	"time"
 
 	"github.com/NikolosHGW/gophermart/internal/app/repository"
 	"github.com/NikolosHGW/gophermart/internal/domain"
@@ -10,8 +9,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
-
-const timeForContext = 5000
 
 type SQLOrderRepository struct {
 	db     *sqlx.DB
@@ -59,8 +56,6 @@ func (r *SQLOrderRepository) AddOrder(ctx context.Context, userID int, orderNumb
 }
 
 func (r *SQLOrderRepository) GetUserOrdersByID(ctx context.Context, userID int) ([]entity.Order, error) {
-	ctx, cancel := context.WithTimeout(ctx, timeForContext*time.Millisecond)
-	defer cancel()
 	var orders []entity.Order
 	query := `
 	SELECT number, status,
