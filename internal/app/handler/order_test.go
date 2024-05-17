@@ -46,12 +46,12 @@ func (m *MockOrderUseCase) GetUserOrdersByID(ctx context.Context, userID int) ([
 	if userID == 1 {
 		return []entity.Order{
 			{
-				Number:     12345678903,
+				Number:     "12345678903",
 				Status:     "NEW",
 				UploadedAt: firstUploadedAt,
 			},
 			{
-				Number:     12345678904,
+				Number:     "12345678904",
 				Status:     "PROCESSING",
 				UploadedAt: secondUploadedAt,
 			},
@@ -136,8 +136,8 @@ func TestOrderHandler_GetOrders(t *testing.T) {
 			userID:         1,
 			expectedStatus: http.StatusOK,
 			expectedBody: fmt.Sprintf(
-				`[{"number":12345678903,"status":"NEW","uploaded_at":"%s"},
-				{"number":12345678904,"status":"PROCESSING","uploaded_at":"%s"}]`,
+				`[{"number":"12345678903","status":"NEW","uploaded_at":"%s"},
+				{"number":"12345678904","status":"PROCESSING","uploaded_at":"%s"}]`,
 				firstUploadedAt,
 				secondUploadedAt,
 			),
