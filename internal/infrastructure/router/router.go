@@ -18,6 +18,7 @@ func NewRouter(handlers *handler.Handlers, middlewares *middleware.Middlewares) 
 
 		r.With(middlewares.Auth.WithAuth).Post("/orders", handlers.OrderHandler.UploadOrder)
 		r.With(middlewares.Auth.WithAuth).Get("/orders", handlers.OrderHandler.GetOrders)
+		r.With(middlewares.Auth.WithAuth).Get("/balance", handlers.BalanceHandler.GetBalance)
 	})
 
 	return r

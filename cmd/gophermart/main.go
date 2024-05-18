@@ -43,13 +43,17 @@ func run() error {
 
 	userRepo := persistence.NewSQLUserRepository(database, myLogger)
 	orderRepo := persistence.NewSQLOrderRepository(database, myLogger)
+	loyaltyPointRepo := persistence.NewSQLLoyaltyPointRepository(database, myLogger)
+	withdrawalRepo := persistence.NewSQLWithdrawalRepository(database, myLogger)
 
 	userService := service.NewUserService(userRepo, myLogger, config.GetSecretKey())
 	orderService := service.NewOrderService(orderRepo, myLogger)
+	balanceService := service.NewBalanceService(loyaltyPointRepo, withdrawalRepo, myLogger)
 
 	handlers := &handler.Handlers{
-		UserHandler:  handler.NewUserHandler(userService, myLogger),
-		OrderHandler: handler.NewOrderHandler(orderService, myLogger),
+		UserHandler:    handler.NewUserHandler(userService, myLogger),
+		OrderHandler:   handler.NewOrderHandler(orderService, myLogger),
+		BalanceHandler: handler.NewBalanceHandler(balanceService, myLogger),
 	}
 
 	middlewares := &middleware.Middlewares{
