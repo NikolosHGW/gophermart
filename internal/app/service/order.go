@@ -57,3 +57,11 @@ func (s *OrderService) GetUserOrdersByID(ctx context.Context, userID int) ([]ent
 	}
 	return orders, nil
 }
+
+func (s *OrderService) OrderExists(ctx context.Context, userID int, orderNumber string) (bool, error) {
+	exists, err := s.orderRepo.OrderExistsForUser(ctx, userID, orderNumber)
+	if err != nil {
+		return exists, domain.ErrInternalServer
+	}
+	return exists, nil
+}

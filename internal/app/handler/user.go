@@ -88,6 +88,6 @@ func sendToken(w http.ResponseWriter, h *UserHandler, user *entity.User) {
 		return
 	}
 	w.Header().Set("Authorization", "Bearer "+token)
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(ContentType, ApplicationJSON)
 	w.WriteHeader(http.StatusOK)
 }

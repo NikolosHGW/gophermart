@@ -110,7 +110,7 @@ func (h *OrderHandler) GetOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(ContentType, ApplicationJSON)
 
 	jsonResponse, err := json.Marshal(orders)
 	if err != nil {

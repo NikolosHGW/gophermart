@@ -27,6 +27,15 @@ func (_m *MockWithdrawalRepository) GetWithdrawalPoints(ctx context.Context, use
 	return ret.Get(0).(float64), ret.Error(1)
 }
 
+func (_m *MockWithdrawalRepository) WithdrawFunds(
+	ctx context.Context,
+	userID int,
+	orderNumber string,
+	sum float64,
+) error {
+	return nil
+}
+
 func TestBalanceService_GetBalanceByUserID(t *testing.T) {
 	mockLoyaltyPointRepo := new(MockLoyaltyPointRepository)
 	mockWithdrawalRepo := new(MockWithdrawalRepository)

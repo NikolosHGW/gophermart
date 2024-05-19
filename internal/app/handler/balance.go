@@ -43,7 +43,7 @@ func (h *BalanceHandler) GetBalance(w http.ResponseWriter, r *http.Request) {
 		Withdrawn: withdrawn,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(ContentType, ApplicationJSON)
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(balance)
 	if err != nil {

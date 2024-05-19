@@ -60,6 +60,10 @@ func (m *MockOrderUseCase) GetUserOrdersByID(ctx context.Context, userID int) ([
 	return nil, domain.ErrInternalServer
 }
 
+func (m *MockOrderUseCase) OrderExists(ctx context.Context, userID int, number string) (bool, error) {
+	return true, nil
+}
+
 func TestOrderHandler_UploadOrder(t *testing.T) {
 	tests := []struct {
 		name           string
