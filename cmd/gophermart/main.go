@@ -49,11 +49,13 @@ func run() error {
 	userService := service.NewUserService(userRepo, myLogger, config.GetSecretKey())
 	orderService := service.NewOrderService(orderRepo, myLogger)
 	balanceService := service.NewBalanceService(loyaltyPointRepo, withdrawalRepo, myLogger)
+	withdrawalService := service.NewWithdrawalService(withdrawalRepo)
 
 	handlers := &handler.Handlers{
-		UserHandler:    handler.NewUserHandler(userService, myLogger),
-		OrderHandler:   handler.NewOrderHandler(orderService, myLogger),
-		BalanceHandler: handler.NewBalanceHandler(balanceService, myLogger),
+		UserHandler:       handler.NewUserHandler(userService, myLogger),
+		OrderHandler:      handler.NewOrderHandler(orderService, myLogger),
+		BalanceHandler:    handler.NewBalanceHandler(balanceService, myLogger),
+		WithdrawalHandler: handler.NewWithdrawalHandler(balanceService, withdrawalService, orderService, myLogger),
 	}
 
 	middlewares := &middleware.Middlewares{

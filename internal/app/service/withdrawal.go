@@ -12,8 +12,10 @@ type WithdrawalService struct {
 	withdrawalRepo repository.WithdrawalRepository
 }
 
-func NewWithdrawalService() usecase.WithdrawalUseCase {
-	return &WithdrawalService{}
+func NewWithdrawalService(withdrawalRepo repository.WithdrawalRepository) usecase.WithdrawalUseCase {
+	return &WithdrawalService{
+		withdrawalRepo: withdrawalRepo,
+	}
 }
 
 func (s *WithdrawalService) ValidBalance(current, sum float64) bool {
