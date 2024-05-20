@@ -93,7 +93,7 @@ func TestWithdrawalHandler_Withdraw(t *testing.T) {
 		{
 			name: "Успешное списание средств",
 			request: WithdrawRequest{
-				Order: "123456",
+				Order: "2377225624",
 				Sum:   100.0,
 			},
 			userID: 1,
@@ -103,8 +103,8 @@ func TestWithdrawalHandler_Withdraw(t *testing.T) {
 				orderUseCase := new(MockOrderUseCaseForWithdrawal)
 				balanceUseCase.On("GetBalanceByUserID", mock.Anything, 1).Return(200.0, 0.0, nil)
 				withdrawalUseCase.On("ValidBalance", 200.0, 100.0).Return(true)
-				orderUseCase.On("OrderExists", mock.Anything, 1, "123456").Return(true, nil)
-				withdrawalUseCase.On("WithdrawFunds", mock.Anything, 1, "123456", 100.0).Return(nil)
+				orderUseCase.On("OrderExists", mock.Anything, 1, "2377225624").Return(true, nil)
+				withdrawalUseCase.On("WithdrawFunds", mock.Anything, 1, "2377225624", 100.0).Return(nil)
 
 				return NewWithdrawalHandler(balanceUseCase, withdrawalUseCase, orderUseCase, logger)
 			},

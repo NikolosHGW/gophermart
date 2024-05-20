@@ -60,12 +60,7 @@ func (h *WithdrawalHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists, err := h.orderUseCase.OrderExists(r.Context(), userID, req.Order)
-	if err != nil {
-		http.Error(w, domain.ErrInternalServer.Error(), http.StatusInternalServerError)
-		return
-	}
-	if !exists {
+	if !ValidateOrderNumber(req.Order) {
 		http.Error(w, "неверный номер заказа", http.StatusUnprocessableEntity)
 		return
 	}

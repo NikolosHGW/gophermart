@@ -63,9 +63,8 @@ func (r *SQLWithdrawalRepository) WithdrawFunds(
 	}
 
 	insertWithdrawalQuery := `
-	INSERT INTO withdrawals (user_id, order_id, sum) 
-	VALUES ($1, (SELECT id FROM orders WHERE number = $2 AND user_id = $3), $4)`
-	_, err = tx.ExecContext(ctx, insertWithdrawalQuery, userID, orderNumber, userID, sum)
+	INSERT INTO withdrawals (user_id, order, sum) VALUES ($1, $2, $3)`
+	_, err = tx.ExecContext(ctx, insertWithdrawalQuery, userID, orderNumber, sum)
 	if err != nil {
 		errRollback := tx.Rollback()
 		if errRollback != nil {
@@ -90,11 +89,10 @@ func (r *SQLWithdrawalRepository) GetWithdrawalsByUserID(
 ) ([]entity.Withdrawal, error) {
 	var withdrawals []entity.Withdrawal
 	query := `
-	SELECT o.number, w.sum, w.processed_at
-	FROM withdrawals w
-	INNER JOIN orders o ON w.order_id = o.id
-	WHERE w.user_id = $1
-	ORDER BY w.processed_at ASC`
+	SELECT order, sum, processed_at
+	FROM withdrawals
+	WHERE user_id = $1
+	ORDER BY processed_at ASC`
 	err := r.db.SelectContext(ctx, &withdrawals, query, userID)
 	if err != nil {
 		r.logger.Info("ошибка при выборке withdrawals", zap.Error(err))
