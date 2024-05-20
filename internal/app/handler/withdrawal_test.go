@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/NikolosHGW/gophermart/internal/domain"
 	"github.com/NikolosHGW/gophermart/internal/domain/entity"
@@ -51,7 +52,8 @@ func (m *MockWithdrawalUseCase) GetWithdrawalsByUserID(
 	ctx context.Context,
 	userID int,
 ) ([]entity.Withdrawal, error) {
-	return nil, nil
+	args := m.Called(ctx, userID)
+	return args.Get(0).([]entity.Withdrawal), args.Error(1)
 }
 
 type MockOrderUseCaseForWithdrawal struct {
@@ -170,6 +172,59 @@ func TestWithdrawalHandler_Withdraw(t *testing.T) {
 				responseBody, _ := io.ReadAll(res.Body)
 				assert.Equal(t, tt.expectedBody, string(responseBody))
 			}
+		})
+	}
+}
+
+func TestWithdrawalHandler_GetWithdrawals(t *testing.T) {
+	tests := []struct {
+		name           string
+		userID         int
+		mockReturn     []entity.Withdrawal
+		mockError      error
+		expectedStatus int
+	}{
+		{
+			name:           "успешная обработка запроса",
+			userID:         1,
+			mockReturn:     []entity.Withdrawal{{Order: "2377225624", Sum: 500, ProcessedAt: time.Now().Format((time.RFC3339))}},
+			mockError:      nil,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "нет ни одного списания",
+			userID:         1,
+			mockReturn:     []entity.Withdrawal{},
+			mockError:      nil,
+			expectedStatus: http.StatusNoContent,
+		},
+		{
+			name:           "внутренняя ошибка сервера",
+			userID:         1,
+			mockReturn:     nil,
+			mockError:      domain.ErrInternalServer,
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockUseCase := new(MockWithdrawalUseCase)
+			mockUseCase.On("GetWithdrawalsByUserID", mock.Anything, tt.userID).Return(tt.mockReturn, tt.mockError)
+
+			req, _ := http.NewRequest(http.MethodGet, "/api/user/withdrawals", nil)
+			req = req.WithContext(context.WithValue(req.Context(), domain.ContextKey, tt.userID))
+			rr := httptest.NewRecorder()
+
+			handler := NewWithdrawalHandler(
+				&MockBalanceUseCase{},
+				mockUseCase,
+				&MockOrderUseCaseForWithdrawal{},
+				zap.NewNop(),
+			)
+			handler.GetWithdrawals(rr, req)
+
+			assert.Equal(t, tt.expectedStatus, rr.Code)
 		})
 	}
 }
