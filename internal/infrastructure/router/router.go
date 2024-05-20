@@ -20,6 +20,7 @@ func NewRouter(handlers *handler.Handlers, middlewares *middleware.Middlewares) 
 		r.With(middlewares.Auth.WithAuth).Get("/orders", handlers.OrderHandler.GetOrders)
 		r.With(middlewares.Auth.WithAuth).Get("/balance", handlers.BalanceHandler.GetBalance)
 		r.With(middlewares.Auth.WithAuth).Post("/balance/withdraw", handlers.WithdrawalHandler.Withdraw)
+		r.With(middlewares.Auth.WithAuth).Get("/withdrawals", handlers.WithdrawalHandler.GetWithdrawals)
 	})
 
 	return r
