@@ -63,7 +63,7 @@ func (r *SQLWithdrawalRepository) WithdrawFunds(
 	}
 
 	insertWithdrawalQuery := `
-	INSERT INTO withdrawals (user_id, order, sum) VALUES ($1, $2, $3)`
+	INSERT INTO withdrawals (user_id, order_number, sum) VALUES ($1, $2, $3)`
 	_, err = tx.ExecContext(ctx, insertWithdrawalQuery, userID, orderNumber, sum)
 	if err != nil {
 		errRollback := tx.Rollback()
@@ -89,7 +89,7 @@ func (r *SQLWithdrawalRepository) GetWithdrawalsByUserID(
 ) ([]entity.Withdrawal, error) {
 	var withdrawals []entity.Withdrawal
 	query := `
-	SELECT order, sum, processed_at
+	SELECT order_number, sum, processed_at
 	FROM withdrawals
 	WHERE user_id = $1
 	ORDER BY processed_at ASC`
