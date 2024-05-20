@@ -47,6 +47,13 @@ func (m *MockWithdrawalUseCase) WithdrawFunds(
 	return args.Error(0)
 }
 
+func (m *MockWithdrawalUseCase) GetWithdrawalsByUserID(
+	ctx context.Context,
+	userID int,
+) ([]entity.Withdrawal, error) {
+	return nil, nil
+}
+
 type MockOrderUseCaseForWithdrawal struct {
 	mock.Mock
 }

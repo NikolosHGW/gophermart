@@ -24,8 +24,8 @@ func NewBalanceHandler(balanceUseCase usecase.BalanceUseCase, logger *zap.Logger
 func (h *BalanceHandler) GetBalance(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(domain.ContextKey).(int)
 	if !ok {
-		h.logger.Info("пользователь не авторизован")
-		http.Error(w, "пользователь не авторизован", http.StatusUnauthorized)
+		h.logger.Info(domain.ErrAuth.Error())
+		http.Error(w, domain.ErrAuth.Error(), http.StatusUnauthorized)
 		return
 	}
 

@@ -45,7 +45,7 @@ func (h *WithdrawalHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
 
 	userID, ok := r.Context().Value(domain.ContextKey).(int)
 	if !ok {
-		http.Error(w, "пользователь не авторизован", http.StatusUnauthorized)
+		http.Error(w, domain.ErrAuth.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -81,6 +81,33 @@ func (h *WithdrawalHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
 	err = r.Body.Close()
 	if err != nil {
 		h.logger.Info("ошибка при закрытии body", zap.Error(err))
+		http.Error(w, domain.ErrInternalServer.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (h *WithdrawalHandler) GetWithdrawals(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(domain.ContextKey).(int)
+	if !ok {
+		http.Error(w, domain.ErrAuth.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	withdrawals, err := h.withdrawalUseCase.GetWithdrawalsByUserID(r.Context(), userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if len(withdrawals) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	w.Header().Set(ContentType, ApplicationJSON)
+
+	err = json.NewEncoder(w).Encode(withdrawals)
+	if err != nil {
+		h.logger.Info("ошибка при encoding списаний", zap.Error(err))
 		http.Error(w, domain.ErrInternalServer.Error(), http.StatusInternalServerError)
 	}
 }

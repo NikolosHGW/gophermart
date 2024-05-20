@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/NikolosHGW/gophermart/internal/app/repository"
 	"github.com/NikolosHGW/gophermart/internal/domain"
+	"github.com/NikolosHGW/gophermart/internal/domain/entity"
 	"github.com/NikolosHGW/gophermart/internal/domain/usecase"
 )
 
@@ -33,4 +35,13 @@ func (s *WithdrawalService) WithdrawFunds(
 		return domain.ErrInternalServer
 	}
 	return nil
+}
+
+func (s *WithdrawalService) GetWithdrawalsByUserID(ctx context.Context, userID int) ([]entity.Withdrawal, error) {
+	withdrawals, err := s.withdrawalRepo.GetWithdrawalsByUserID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("не получилось достать все списания: %w", err)
+	}
+
+	return withdrawals, nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/NikolosHGW/gophermart/internal/domain"
+	"github.com/NikolosHGW/gophermart/internal/domain/entity"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
@@ -32,7 +33,7 @@ func (r *SQLWithdrawalRepository) GetWithdrawalPoints(ctx context.Context, userI
 		userID,
 	)
 	if err != nil {
-		r.logger.Error("ошибка при получении суммы использованных баллов", zap.Error(err))
+		r.logger.Info("ошибка при получении суммы использованных баллов", zap.Error(err))
 		return 0, domain.ErrInternalServer
 	}
 	return withdrawnPoints, nil
@@ -46,7 +47,7 @@ func (r *SQLWithdrawalRepository) WithdrawFunds(
 ) error {
 	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
-		r.logger.Error("ошибка при запуске транзакции для списания", zap.Error(err))
+		r.logger.Info("ошибка при запуске транзакции для списания", zap.Error(err))
 		return domain.ErrInternalServer
 	}
 
@@ -55,9 +56,9 @@ func (r *SQLWithdrawalRepository) WithdrawFunds(
 	if err != nil {
 		errRollback := tx.Rollback()
 		if errRollback != nil {
-			r.logger.Error("ошибка при вызове tx.Rollback() 1", zap.Error(err))
+			r.logger.Info("ошибка при вызове tx.Rollback() 1", zap.Error(err))
 		}
-		r.logger.Error("ошибка при добавлении строки в loyalty_points", zap.Error(err))
+		r.logger.Info("ошибка при добавлении строки в loyalty_points", zap.Error(err))
 		return domain.ErrInternalServer
 	}
 
@@ -68,17 +69,37 @@ func (r *SQLWithdrawalRepository) WithdrawFunds(
 	if err != nil {
 		errRollback := tx.Rollback()
 		if errRollback != nil {
-			r.logger.Error("ошибка при вызове tx.Rollback() 2", zap.Error(err))
+			r.logger.Info("ошибка при вызове tx.Rollback() 2", zap.Error(err))
 		}
-		r.logger.Error("ошибка при добавлении строки в withdrawals", zap.Error(err))
+		r.logger.Info("ошибка при добавлении строки в withdrawals", zap.Error(err))
 		return domain.ErrInternalServer
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		r.logger.Error("ошибка закрытии транзакции", zap.Error(err))
+		r.logger.Info("ошибка закрытии транзакции", zap.Error(err))
 		return domain.ErrInternalServer
 	}
 
 	return nil
+}
+
+func (r *SQLWithdrawalRepository) GetWithdrawalsByUserID(
+	ctx context.Context,
+	userID int,
+) ([]entity.Withdrawal, error) {
+	var withdrawals []entity.Withdrawal
+	query := `
+	SELECT o.number, w.sum, w.processed_at
+	FROM withdrawals w
+	INNER JOIN orders o ON w.order_id = o.id
+	WHERE w.user_id = $1
+	ORDER BY w.processed_at ASC`
+	err := r.db.SelectContext(ctx, &withdrawals, query, userID)
+	if err != nil {
+		r.logger.Info("ошибка при выборке withdrawals", zap.Error(err))
+		return nil, domain.ErrInternalServer
+	}
+
+	return withdrawals, nil
 }

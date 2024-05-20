@@ -8,4 +8,5 @@ var (
 	ErrOrderAlreadyUploadedByAnotherUser = errors.New("номер заказа уже был загружен другим пользователем")
 	ErrOrderAlreadyUploadedForThisUser   = errors.New("номер заказа уже был загружен этим пользователем")
 	ErrInternalServer                    = errors.New("внутренняя ошибка сервера")
+	ErrAuth                              = errors.New("пользователь не авторизован")
 )

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/NikolosHGW/gophermart/internal/domain/entity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
@@ -34,6 +35,13 @@ func (_m *MockWithdrawalRepository) WithdrawFunds(
 	sum float64,
 ) error {
 	return nil
+}
+
+func (_m *MockWithdrawalRepository) GetWithdrawalsByUserID(
+	ctx context.Context,
+	userID int,
+) ([]entity.Withdrawal, error) {
+	return nil, nil
 }
 
 func TestBalanceService_GetBalanceByUserID(t *testing.T) {
