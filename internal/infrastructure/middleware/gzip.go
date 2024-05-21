@@ -49,13 +49,10 @@ func (c *compressWriter) WriteHeader(statusCode int) {
 }
 
 func (c *compressWriter) Close() error {
-	if c.w.Header().Get("Content-Length") != "0" || c.w.Header().Get("Content-Type") != "" {
-		err := c.zw.Close()
-		if err != nil {
-			return fmt.Errorf("ошибка при закрытии ответа для compressWriter: %w", err)
-		}
+	err := c.zw.Close()
+	if err != nil {
+		return fmt.Errorf("ошибка при закрытии ответа для compressWriter: %w", err)
 	}
-
 	return nil
 }
 
