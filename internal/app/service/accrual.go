@@ -101,7 +101,7 @@ type AccrualResponse struct {
 func (a *Accrual) processOrder(ctx context.Context, order entity.Order, cancelFunc context.CancelFunc) {
 	accrual, err := a.getAccrualData(order.Number, cancelFunc)
 	if err == nil {
-		err := a.accrualRepo.UpdateAccrual(ctx, accrual.Order, accrual.Accrual)
+		err := a.accrualRepo.UpdateAccrual(ctx, accrual.Order, accrual.Accrual, accrual.Status)
 		if err != nil {
 			a.logger.Info("ошибка при обновлении статуса и полученных баллов", zap.Error(err))
 		}

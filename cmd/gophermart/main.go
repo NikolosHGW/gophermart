@@ -45,11 +45,13 @@ func run() error {
 	orderRepo := persistence.NewSQLOrderRepository(database, myLogger)
 	loyaltyPointRepo := persistence.NewSQLLoyaltyPointRepository(database, myLogger)
 	withdrawalRepo := persistence.NewSQLWithdrawalRepository(database, myLogger)
+	accrualRepo := persistence.NewSQLAccrualRepository(database)
 
 	userService := service.NewUserService(userRepo, myLogger, config.GetSecretKey())
 	orderService := service.NewOrderService(orderRepo, myLogger)
 	balanceService := service.NewBalanceService(loyaltyPointRepo, withdrawalRepo, myLogger)
 	withdrawalService := service.NewWithdrawalService(withdrawalRepo)
+	accrualService := service.NewAccrual(accrualRepo, myLogger, config.AccrualSystemAddress)
 
 	handlers := &handler.Handlers{
 		UserHandler:       handler.NewUserHandler(userService, myLogger),
@@ -73,6 +75,8 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("ошибка при запуске сервера: %w", err)
 	}
+
+	accrualService.StartAccrual()
 
 	return nil
 }
