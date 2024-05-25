@@ -87,13 +87,16 @@ func (r *SQLWithdrawalRepository) GetWithdrawalsByUserID(
 	ctx context.Context,
 	userID int,
 ) ([]entity.Withdrawal, error) {
+	r.logger.Info("1) GetWithdrawalsByUserID захожу, работает?")
 	var withdrawals []entity.Withdrawal
 	query := `
 	SELECT order_number, sum, processed_at
 	FROM withdrawals
 	WHERE user_id = $1
 	ORDER BY processed_at ASC`
+	r.logger.Info("2) GetWithdrawalsByUserID захожу, работает?")
 	err := r.db.SelectContext(ctx, &withdrawals, query, userID)
+	r.logger.Info("3) GetWithdrawalsByUserID захожу, работает?")
 	if err != nil {
 		r.logger.Info("ошибка при выборке withdrawals", zap.Error(err))
 		return nil, domain.ErrInternalServer
