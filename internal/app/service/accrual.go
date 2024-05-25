@@ -118,7 +118,7 @@ func (a *Accrual) processOrder(ctx context.Context, order entity.Order, cancelFu
 }
 
 func (a *Accrual) getAccrualData(orderNumber string, cancelFunc context.CancelFunc) (*AccrualResponse, error) {
-	resp, err := http.Get("http://" + a.accrualAddress + "/api/orders/" + orderNumber)
+	resp, err := http.Get(a.accrualAddress + "/api/orders/" + orderNumber)
 	if err != nil {
 		a.logger.Info("ошибка при отправке запроса к сервису начисления баллов", zap.Error(err))
 
