@@ -18,30 +18,39 @@ func NewSQLAccrualRepository(db *sqlx.DB) repository.AccrualRepository {
 	return &SQLAccrualRepository{db: db}
 }
 
-func (r *SQLAccrualRepository) GetNonFinalOrder(ctx context.Context) (entity.Order, error) {
-	var order entity.Order
-	query := `
-		SELECT number, status, uploaded_at 
-		FROM orders 
-		WHERE status NOT IN ($1, $2)
-		LIMIT 1`
-	err := r.db.GetContext(ctx, &order, query, domain.StatusInvalid, domain.StatusProcessed)
-	if err != nil {
-		return entity.Order{}, fmt.Errorf("ошибка при запросе на получение незавершенного заказа: %w", err)
-	}
-	return order, nil
-}
-
-func (r *SQLAccrualRepository) GetNonFinalOrders(ctx context.Context, limit int) ([]entity.Order, error) {
+func (r *SQLAccrualRepository) GetNonFinalOrders(
+	ctx context.Context,
+	limit int,
+	prevOrderNumber string,
+) ([]entity.Order, error) {
 	orders := []entity.Order{}
-	query := `
-		SELECT number, status, uploaded_at 
-		FROM orders 
-		WHERE status NOT IN ($1, $2)
-		LIMIT $3`
-	err := r.db.SelectContext(ctx, &orders, query, domain.StatusInvalid, domain.StatusProcessed, limit)
+
+	var lastOrderNumber string
+	err := r.db.GetContext(ctx, &lastOrderNumber, "SELECT number FROM orders ORDER BY number DESC LIMIT 1")
 	if err != nil {
-		return nil, fmt.Errorf("ошибка при запросе на получения незавершённых заказов: %w", err)
+		return nil, fmt.Errorf("ошибка при получении последнего номера заказа: %w", err)
+	}
+
+	if prevOrderNumber == lastOrderNumber || prevOrderNumber == "" {
+		prevOrderNumber = "0"
+	}
+
+	query := `
+		SELECT number, status, uploaded_at
+		FROM orders
+		WHERE status NOT IN ($1, $2) AND CAST(number AS INTEGER) > CAST($3 AS INTEGER)
+		LIMIT $4`
+	err = r.db.SelectContext(
+		ctx,
+		&orders,
+		query,
+		domain.StatusInvalid,
+		domain.StatusProcessed,
+		prevOrderNumber,
+		limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при запросе на получение незавершённых заказов: %w", err)
 	}
 	return orders, nil
 }

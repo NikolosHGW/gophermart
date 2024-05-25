@@ -18,15 +18,17 @@ import (
 )
 
 const (
-	initLimit        = 20
-	initTimerSeconds = 60
+	initLimit           = 20
+	initTimerSeconds    = 60
+	initPrevOrderNumber = "0"
 )
 
 type Accrual struct {
-	accrualRepo    repository.AccrualRepository
-	logger         *zap.Logger
-	accrualAddress string
-	limit          int
+	prevOrderNumber string
+	accrualRepo     repository.AccrualRepository
+	logger          *zap.Logger
+	accrualAddress  string
+	limit           int
 }
 
 func NewAccrual(
@@ -35,24 +37,19 @@ func NewAccrual(
 	accrualAddress string,
 ) *Accrual {
 	return &Accrual{
-		accrualRepo:    accrualRepo,
-		logger:         logger,
-		accrualAddress: accrualAddress,
-		limit:          initLimit,
+		accrualRepo:     accrualRepo,
+		logger:          logger,
+		accrualAddress:  accrualAddress,
+		limit:           initLimit,
+		prevOrderNumber: initPrevOrderNumber,
 	}
 }
 
 func (a *Accrual) StartAccrual() {
-	retryTicker := time.NewTicker(initTimerSeconds * time.Second)
 	var mutex sync.Mutex
 
 	go func() {
-		mutex.Lock()
-		ctx, cancelFunc := context.WithCancel(context.Background())
-		a.initRequest(ctx, cancelFunc)
-		mutex.Unlock()
-
-		for range retryTicker.C {
+		for {
 			mutex.Lock()
 			ctx, cancelFunc := context.WithCancel(context.Background())
 			a.initRequest(ctx, cancelFunc)
@@ -62,7 +59,11 @@ func (a *Accrual) StartAccrual() {
 }
 
 func (a *Accrual) initRequest(ctx context.Context, cancelFunc context.CancelFunc) {
-	ordersChan := a.generator(ctx)
+	orders, err := a.accrualRepo.GetNonFinalOrders(ctx, a.limit, a.prevOrderNumber)
+	if err != nil {
+		a.logger.Info("ошибка при получении всех необработанных заказов", zap.Error(err))
+	}
+	ordersChan := a.generator(ctx, orders)
 
 	for order := range ordersChan {
 		select {
@@ -74,23 +75,18 @@ func (a *Accrual) initRequest(ctx context.Context, cancelFunc context.CancelFunc
 	}
 }
 
-func (a *Accrual) generator(ctx context.Context) chan entity.Order {
+func (a *Accrual) generator(ctx context.Context, orders []entity.Order) chan entity.Order {
 	ordersChan := make(chan entity.Order)
 
 	go func() {
 		defer close(ordersChan)
 
-		for i := 0; i < a.limit; i++ {
+		for _, order := range orders {
 			select {
 			case <-ctx.Done():
 				return
 			default:
-				order, err := a.accrualRepo.GetNonFinalOrder(ctx)
-				if err != nil {
-					a.logger.Info("ошибка при получении всех необработанных заказов", zap.Error(err))
-				} else {
-					ordersChan <- order
-				}
+				ordersChan <- order
 			}
 		}
 	}()
@@ -136,8 +132,10 @@ func (a *Accrual) getAccrualData(orderNumber string, cancelFunc context.CancelFu
 			return nil, fmt.Errorf("ошибка при извлечении кол-ва запросов: %w", err)
 		}
 		a.limit = newMaxReq
+		a.prevOrderNumber = orderNumber
 
 		a.logger.Info("превышено число запросов", zap.Error(err))
+		time.Sleep(initTimerSeconds * time.Second)
 		return nil, fmt.Errorf("превышено число запросов")
 	}
 
