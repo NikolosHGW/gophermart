@@ -62,11 +62,7 @@ func (a *Accrual) StartAccrual() {
 }
 
 func (a *Accrual) initRequest(ctx context.Context, cancelFunc context.CancelFunc) {
-	orders, err := a.accrualRepo.GetNonFinalOrders(ctx, a.limit)
-	if err != nil {
-		a.logger.Info("ошибка при получении всех необработанных заказов", zap.Error(err))
-	}
-	ordersChan := a.generator(ctx, orders)
+	ordersChan := a.generator(ctx)
 
 	for order := range ordersChan {
 		select {
@@ -78,18 +74,23 @@ func (a *Accrual) initRequest(ctx context.Context, cancelFunc context.CancelFunc
 	}
 }
 
-func (a *Accrual) generator(ctx context.Context, orders []entity.Order) chan entity.Order {
+func (a *Accrual) generator(ctx context.Context) chan entity.Order {
 	ordersChan := make(chan entity.Order)
 
 	go func() {
 		defer close(ordersChan)
 
-		for _, order := range orders {
+		for i := 0; i < a.limit; i++ {
 			select {
 			case <-ctx.Done():
 				return
 			default:
-				ordersChan <- order
+				order, err := a.accrualRepo.GetNonFinalOrder(ctx)
+				if err != nil {
+					a.logger.Info("ошибка при получении всех необработанных заказов", zap.Error(err))
+				} else {
+					ordersChan <- order
+				}
 			}
 		}
 	}()

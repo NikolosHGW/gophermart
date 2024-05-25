@@ -18,6 +18,20 @@ func NewSQLAccrualRepository(db *sqlx.DB) repository.AccrualRepository {
 	return &SQLAccrualRepository{db: db}
 }
 
+func (r *SQLAccrualRepository) GetNonFinalOrder(ctx context.Context) (entity.Order, error) {
+	var order entity.Order
+	query := `
+		SELECT number, status, uploaded_at 
+		FROM orders 
+		WHERE status NOT IN ($1, $2)
+		LIMIT 1`
+	err := r.db.GetContext(ctx, &order, query, domain.StatusInvalid, domain.StatusProcessed)
+	if err != nil {
+		return entity.Order{}, fmt.Errorf("ошибка при запросе на получение незавершенного заказа: %w", err)
+	}
+	return order, nil
+}
+
 func (r *SQLAccrualRepository) GetNonFinalOrders(ctx context.Context, limit int) ([]entity.Order, error) {
 	orders := []entity.Order{}
 	query := `
