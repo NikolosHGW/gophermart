@@ -15,6 +15,7 @@ const (
 	applicationJSON       = "application/json"
 	textHTML              = "html/text"
 	statusMultipleChoices = 300
+	gzipString            = "gzip"
 )
 
 type compressWriter struct {
@@ -43,7 +44,7 @@ func (c *compressWriter) Write(p []byte) (int, error) {
 
 func (c *compressWriter) WriteHeader(statusCode int) {
 	if statusCode < statusMultipleChoices {
-		c.w.Header().Set("Content-Encoding", "gzip")
+		c.w.Header().Set("Content-Encoding", gzipString)
 	}
 	c.w.WriteHeader(statusCode)
 }
@@ -110,13 +111,15 @@ func (gm GzipMiddleware) WithGzip(next http.Handler) http.Handler {
 		contentType := strings.Join(r.Header.Values("Content-Type"), ", ")
 		accept := strings.Join(r.Header.Values("Accept"), ", ")
 
-		supportsGzip := strings.Contains(acceptEncoding, "gzip")
+		supportsGzip := strings.Contains(acceptEncoding, gzipString)
 		supportApplicationJSON := strings.Contains(contentType, applicationJSON)
 		supportTextHTML := strings.Contains(accept, textHTML)
 
 		if supportsGzip && (supportApplicationJSON || supportTextHTML) {
 			cw := newCompressWriter(w)
 			ow = cw
+
+			w.Header().Set("Content-Encoding", gzipString)
 
 			defer func() {
 				err := cw.Close()
@@ -127,7 +130,7 @@ func (gm GzipMiddleware) WithGzip(next http.Handler) http.Handler {
 		}
 
 		contentEncoding := strings.Join(r.Header.Values("Content-Encoding"), ", ")
-		sendsGzip := strings.Contains(contentEncoding, "gzip")
+		sendsGzip := strings.Contains(contentEncoding, gzipString)
 		if sendsGzip {
 			cr, err := newCompressReader(r.Body)
 			if err != nil {
