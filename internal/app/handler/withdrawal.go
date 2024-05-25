@@ -100,9 +100,14 @@ func (h *WithdrawalHandler) GetWithdrawals(w http.ResponseWriter, r *http.Reques
 
 	w.Header().Set(ContentType, ApplicationJSON)
 
-	err = json.NewEncoder(w).Encode(withdrawals)
+	resp, err := json.Marshal(withdrawals)
 	if err != nil {
 		h.logger.Info("ошибка при encoding списаний", zap.Error(err))
 		http.Error(w, domain.ErrInternalServer.Error(), http.StatusInternalServerError)
+		return
+	}
+	_, err = w.Write(resp)
+	if err != nil {
+		h.logger.Info("ошибка при записи в тело ответа", zap.Error(err))
 	}
 }
