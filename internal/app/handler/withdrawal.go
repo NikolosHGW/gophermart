@@ -81,37 +81,26 @@ func (h *WithdrawalHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *WithdrawalHandler) GetWithdrawals(w http.ResponseWriter, r *http.Request) {
-	h.logger.Info("1) внутри GetWithdrawals")
 	userID, ok := r.Context().Value(domain.ContextKey).(int)
-	h.logger.Info("2) внутри GetWithdrawals")
 	if !ok {
-		h.logger.Info("3) внутри GetWithdrawals")
 		http.Error(w, domain.ErrAuth.Error(), http.StatusUnauthorized)
 		return
 	}
 
-	h.logger.Info("4) внутри GetWithdrawals")
 	withdrawals, err := h.withdrawalUseCase.GetWithdrawalsByUserID(r.Context(), userID)
-	h.logger.Info("5) внутри GetWithdrawals")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	h.logger.Info("6) внутри GetWithdrawals")
 	if len(withdrawals) == 0 {
-		h.logger.Info("7) внутри GetWithdrawals")
 		w.WriteHeader(http.StatusNoContent)
-		h.logger.Info("8) внутри GetWithdrawals")
 		return
 	}
 
-	h.logger.Info("9) внутри GetWithdrawals")
 	w.Header().Set(ContentType, ApplicationJSON)
-	h.logger.Info("10) внутри GetWithdrawals")
 
 	err = json.NewEncoder(w).Encode(withdrawals)
-	h.logger.Info("11) внутри GetWithdrawals")
 	if err != nil {
 		h.logger.Info("ошибка при encoding списаний", zap.Error(err))
 		http.Error(w, domain.ErrInternalServer.Error(), http.StatusInternalServerError)
