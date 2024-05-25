@@ -94,8 +94,8 @@ func (r *SQLAccrualRepository) UpdateAccrual(
 		}
 
 		_, err = tx.ExecContext(ctx, `
-			INSERT INTO loyalty_points (user_id, accrued_point, spent_point)
-			VALUES ($1, $2, 0)`, userID, accrual)
+			INSERT INTO loyalty_points (user_id, accrued_point, order_number, spent_point)
+			VALUES ($1, $2, $3, 0)`, userID, accrual, orderNumber)
 		if err != nil {
 			return fmt.Errorf("ошибка при начислении баллов: %w", err)
 		}

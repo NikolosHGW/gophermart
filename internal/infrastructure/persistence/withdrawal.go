@@ -51,8 +51,10 @@ func (r *SQLWithdrawalRepository) WithdrawFunds(
 		return domain.ErrInternalServer
 	}
 
-	insertLoyaltyPointsQuery := `INSERT INTO loyalty_points (user_id, spent_point, accrued_point) VALUES ($1, $2, 0)`
-	_, err = tx.ExecContext(ctx, insertLoyaltyPointsQuery, userID, sum)
+	insertLoyaltyPointsQuery := `
+	INSERT INTO loyalty_points (user_id, spent_point, order_number, accrued_point) VALUES ($1, $2, $3, 0)
+	`
+	_, err = tx.ExecContext(ctx, insertLoyaltyPointsQuery, userID, sum, orderNumber)
 	if err != nil {
 		errRollback := tx.Rollback()
 		if errRollback != nil {
