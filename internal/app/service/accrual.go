@@ -44,9 +44,15 @@ func NewAccrual(
 
 func (a *Accrual) StartAccrual() {
 	retryTicker := time.NewTicker(initTimerSeconds * time.Second)
+	defer retryTicker.Stop()
 	var mutex sync.Mutex
 
 	go func() {
+		mutex.Lock()
+		ctx, cancelFunc := context.WithCancel(context.Background())
+		a.initRequest(ctx, cancelFunc)
+		mutex.Unlock()
+
 		for range retryTicker.C {
 			mutex.Lock()
 			ctx, cancelFunc := context.WithCancel(context.Background())
@@ -109,7 +115,7 @@ func (a *Accrual) processOrder(ctx context.Context, order entity.Order, cancelFu
 }
 
 func (a *Accrual) getAccrualData(orderNumber string, cancelFunc context.CancelFunc) (*AccrualResponse, error) {
-	resp, err := http.Get(a.accrualAddress + "/api/orders/" + orderNumber)
+	resp, err := http.Get("http://" + a.accrualAddress + "/api/orders/" + orderNumber)
 	if err != nil {
 		a.logger.Info("ошибка при отправке запроса к сервису начисления баллов", zap.Error(err))
 

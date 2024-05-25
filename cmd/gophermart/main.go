@@ -70,13 +70,13 @@ func run() error {
 
 	myLogger.Info("Running server", zap.String("address", config.GetRunAddress()))
 
+	accrualService.StartAccrual()
+
 	err = http.ListenAndServe(config.GetRunAddress(), r)
 
 	if err != nil {
 		return fmt.Errorf("ошибка при запуске сервера: %w", err)
 	}
-
-	accrualService.StartAccrual()
 
 	return nil
 }

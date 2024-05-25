@@ -21,7 +21,7 @@ func NewSQLAccrualRepository(db *sqlx.DB) repository.AccrualRepository {
 func (r *SQLAccrualRepository) GetNonFinalOrders(ctx context.Context, limit int) ([]entity.Order, error) {
 	orders := []entity.Order{}
 	query := `
-		SELECT id, user_id, number, status, uploaded_at 
+		SELECT number, status, uploaded_at 
 		FROM orders 
 		WHERE status NOT IN ($1, $2)
 		LIMIT $3`
