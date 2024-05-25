@@ -38,7 +38,7 @@ func (r *SQLAccrualRepository) GetNonFinalOrders(
 	query := `
 		SELECT number, status, uploaded_at
 		FROM orders
-		WHERE status NOT IN ($1, $2) AND CAST(number AS INTEGER) > CAST($3 AS INTEGER)
+		WHERE status NOT IN ($1, $2) AND CAST(number AS BIGINT) > CAST($3 AS BIGINT)
 		LIMIT $4`
 	err = r.db.SelectContext(
 		ctx,
