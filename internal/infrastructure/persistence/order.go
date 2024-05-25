@@ -61,7 +61,7 @@ func (r *SQLOrderRepository) GetUserOrdersByID(ctx context.Context, userID int) 
 	SELECT o.number,
 		o.status,
 		to_char(o.uploaded_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SSZ') as uploaded_at,
-		lp.accrued_point as accrual
+		COALESCE(lp.accrued_point, 0) as accrual
 	FROM orders o
 	LEFT JOIN loyalty_points lp ON o.number = lp.order_number
 	WHERE o.user_id = $1
