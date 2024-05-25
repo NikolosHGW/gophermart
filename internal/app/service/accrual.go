@@ -21,6 +21,7 @@ const (
 	initLimit           = 20
 	initTimerSeconds    = 60
 	initPrevOrderNumber = "0"
+	initTikerSeconds    = 10
 )
 
 type Accrual struct {
@@ -46,10 +47,16 @@ func NewAccrual(
 }
 
 func (a *Accrual) StartAccrual() {
+	retryTicker := time.NewTicker(initTikerSeconds * time.Second)
 	var mutex sync.Mutex
 
 	go func() {
-		for {
+		mutex.Lock()
+		ctx, cancelFunc := context.WithCancel(context.Background())
+		a.initRequest(ctx, cancelFunc)
+		mutex.Unlock()
+
+		for range retryTicker.C {
 			mutex.Lock()
 			ctx, cancelFunc := context.WithCancel(context.Background())
 			a.initRequest(ctx, cancelFunc)
