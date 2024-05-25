@@ -106,8 +106,9 @@ func (h *WithdrawalHandler) GetWithdrawals(w http.ResponseWriter, r *http.Reques
 		http.Error(w, domain.ErrInternalServer.Error(), http.StatusInternalServerError)
 		return
 	}
+	h.logger.Info("тело ответа", zap.Any("body", resp))
 	_, err = w.Write(resp)
 	if err != nil {
-		h.logger.Info("ошибка при записи в тело ответа", zap.Error(err), zap.Any("body", resp))
+		h.logger.Info("ошибка при записи в тело ответа", zap.Error(err))
 	}
 }
