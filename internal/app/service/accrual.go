@@ -44,7 +44,6 @@ func NewAccrual(
 
 func (a *Accrual) StartAccrual() {
 	retryTicker := time.NewTicker(initTimerSeconds * time.Second)
-	defer retryTicker.Stop()
 	var mutex sync.Mutex
 
 	go func() {
