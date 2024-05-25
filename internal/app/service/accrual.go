@@ -21,7 +21,7 @@ const (
 	initLimit           = 20
 	initTimerSeconds    = 60
 	initPrevOrderNumber = "0"
-	initTikerSeconds    = 10
+	initTikerSeconds    = 3
 )
 
 type Accrual struct {
