@@ -1,14 +1,10 @@
 package service
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"regexp"
-	"strconv"
 	"sync"
 	"time"
 
@@ -17,169 +13,110 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	initLimit           = 20
-	initTimerSeconds    = 60
-	initPrevOrderNumber = "0"
-	initTikerSeconds    = 3
-)
-
-type Accrual struct {
-	prevOrderNumber string
-	accrualRepo     repository.AccrualRepository
+type AccrualService struct {
+	repo            repository.AccrualRepository
 	logger          *zap.Logger
 	accrualAddress  string
-	limit           int
+	requestInterval time.Duration
 }
 
-func NewAccrual(
-	accrualRepo repository.AccrualRepository,
+func NewAccrualService(
+	repo repository.AccrualRepository,
 	logger *zap.Logger,
 	accrualAddress string,
-) *Accrual {
-	return &Accrual{
-		accrualRepo:     accrualRepo,
+	requestInterval time.Duration,
+) *AccrualService {
+	return &AccrualService{
+		repo:            repo,
 		logger:          logger,
 		accrualAddress:  accrualAddress,
-		limit:           initLimit,
-		prevOrderNumber: initPrevOrderNumber,
+		requestInterval: requestInterval,
 	}
 }
 
-func (a *Accrual) StartAccrual() {
-	retryTicker := time.NewTicker(initTikerSeconds * time.Second)
-	var mutex sync.Mutex
+func (s *AccrualService) Run(ctx context.Context) {
+	ticker := time.NewTicker(s.requestInterval)
+	defer ticker.Stop()
 
-	go func() {
-		mutex.Lock()
-		ctx, cancelFunc := context.WithCancel(context.Background())
-		a.initRequest(ctx, cancelFunc)
-		mutex.Unlock()
-
-		for range retryTicker.C {
-			mutex.Lock()
-			ctx, cancelFunc := context.WithCancel(context.Background())
-			a.initRequest(ctx, cancelFunc)
-			mutex.Unlock()
-		}
-	}()
-}
-
-func (a *Accrual) initRequest(ctx context.Context, cancelFunc context.CancelFunc) {
-	orders, err := a.accrualRepo.GetNonFinalOrders(ctx, a.limit, a.prevOrderNumber)
-	if err != nil {
-		a.logger.Info("ошибка при получении всех необработанных заказов", zap.Error(err))
-	}
-	ordersChan := a.generator(ctx, orders)
-
-	for order := range ordersChan {
+	for {
 		select {
 		case <-ctx.Done():
 			return
-		default:
-			a.processOrder(ctx, order, cancelFunc)
+		case <-ticker.C:
+			s.processOrders(ctx)
 		}
 	}
 }
 
-func (a *Accrual) generator(ctx context.Context, orders []entity.Order) chan entity.Order {
-	ordersChan := make(chan entity.Order)
+func (s *AccrualService) processOrders(ctx context.Context) {
+	orders, err := s.repo.GetNonFinalOrders(ctx)
+	if err != nil {
+		s.logger.Error("ошибка при получении не обработанных заказов", zap.Error(err))
+		return
+	}
 
-	go func() {
-		defer close(ordersChan)
+	var wg sync.WaitGroup
+	for _, order := range orders {
+		wg.Add(1)
+		go func(order entity.Order) {
+			defer wg.Done()
+			s.processOrder(ctx, order)
+		}(order)
+	}
+	wg.Wait()
+}
 
-		for _, order := range orders {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				ordersChan <- order
-			}
+func (s *AccrualService) processOrder(ctx context.Context, order entity.Order) {
+	accrualResponse, err := s.getAccrualData(ctx, order.Number)
+	if err != nil {
+		s.logger.Error("ошибка при обращении к системе accrual", zap.String("order_number", order.Number), zap.Error(err))
+		return
+	}
+
+	if accrualResponse != nil {
+		err = s.repo.UpdateAccrual(ctx, accrualResponse.Order, accrualResponse.Accrual, accrualResponse.Status)
+		if err != nil {
+			s.logger.Error("ошибка при обновлении данных accrual", zap.String("order_number", order.Number), zap.Error(err))
 		}
+	}
+}
+
+func (s *AccrualService) getAccrualData(ctx context.Context, orderNumber string) (*AccrualResponse, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.accrualAddress+"/api/orders/"+orderNumber, nil)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при создании запроса: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при отправки запроса: %w", err)
+	}
+	defer func() {
+		err := resp.Body.Close()
+		s.logger.Error("не удалось закрыть body", zap.Error(err))
 	}()
 
-	return ordersChan
+	switch resp.StatusCode {
+	case http.StatusOK:
+		var accrualResponse AccrualResponse
+		if err := json.NewDecoder(resp.Body).Decode(&accrualResponse); err != nil {
+			return nil, fmt.Errorf("ошибка при декодировании ответа: %w", err)
+		}
+		return &accrualResponse, nil
+	case http.StatusNoContent:
+		return nil, fmt.Errorf("нет контента")
+	case http.StatusTooManyRequests:
+		time.Sleep(time.Minute)
+		return nil, fmt.Errorf("превышен лимит запросов")
+	case http.StatusInternalServerError:
+		return nil, fmt.Errorf("ошибка сервера")
+	default:
+		return nil, fmt.Errorf("неожиданный код состояния: %d", resp.StatusCode)
+	}
 }
 
 type AccrualResponse struct {
 	Order   string  `json:"order"`
 	Status  string  `json:"status"`
-	Accrual float64 `json:"accrual"`
-}
-
-func (a *Accrual) processOrder(ctx context.Context, order entity.Order, cancelFunc context.CancelFunc) {
-	accrual, err := a.getAccrualData(order.Number, cancelFunc)
-	if err == nil {
-		err := a.accrualRepo.UpdateAccrual(ctx, accrual.Order, accrual.Accrual, accrual.Status)
-		if err != nil {
-			a.logger.Info("ошибка при обновлении статуса и полученных баллов", zap.Error(err))
-		}
-	}
-}
-
-func (a *Accrual) getAccrualData(orderNumber string, cancelFunc context.CancelFunc) (*AccrualResponse, error) {
-	resp, err := http.Get(a.accrualAddress + "/api/orders/" + orderNumber)
-	if err != nil {
-		a.logger.Info("ошибка при отправке запроса к сервису начисления баллов", zap.Error(err))
-
-		return nil, fmt.Errorf("ошибка при отправке запроса к сервису начисления баллов: %w", err)
-	}
-	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
-			a.logger.Info("ошибка при закрытии body", zap.Error(err))
-		}
-	}()
-
-	if resp.StatusCode == http.StatusTooManyRequests {
-		cancelFunc()
-
-		newMaxReq, err := extractMaxRequestsFromResponse(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("ошибка при извлечении кол-ва запросов: %w", err)
-		}
-		a.limit = newMaxReq
-		a.prevOrderNumber = orderNumber
-
-		a.logger.Info("превышено число запросов", zap.Error(err))
-		time.Sleep(initTimerSeconds * time.Second)
-		return nil, fmt.Errorf("превышено число запросов")
-	}
-
-	if resp.StatusCode == http.StatusNoContent {
-		a.logger.Info("заказ не зарегистрирован в системе расчёта", zap.Error(err))
-		return nil, fmt.Errorf("заказ не зарегистрирован в системе расчёта")
-	}
-
-	var accrualResponse AccrualResponse
-	if err := json.NewDecoder(resp.Body).Decode(&accrualResponse); err != nil {
-		a.logger.Info("ошибка при декодирования json", zap.Error(err))
-
-		return nil, fmt.Errorf("ошибка при декодирования json: %w", err)
-	}
-
-	return &accrualResponse, nil
-}
-
-func extractMaxRequestsFromResponse(body io.ReadCloser) (int, error) {
-	scanner := bufio.NewScanner(body)
-	re := regexp.MustCompile(`No more than (\d+) requests per minute allowed`)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		matches := re.FindStringSubmatch(line)
-		if len(matches) > 1 {
-			maxRequests, err := strconv.Atoi(matches[1])
-			if err != nil {
-				return 0, fmt.Errorf("не удалось преобразовать строку в число :%w", err)
-			}
-			return maxRequests, nil
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return 0, fmt.Errorf("ошибка при сканировании тела ответа :%w", err)
-	}
-
-	return 0, fmt.Errorf("не найдено строк с ограничением запросов :%w", io.EOF)
+	Accrual float64 `json:"accrual,omitempty"`
 }

@@ -18,39 +18,15 @@ func NewSQLAccrualRepository(db *sqlx.DB) repository.AccrualRepository {
 	return &SQLAccrualRepository{db: db}
 }
 
-func (r *SQLAccrualRepository) GetNonFinalOrders(
-	ctx context.Context,
-	limit int,
-	prevOrderNumber string,
-) ([]entity.Order, error) {
+func (r *SQLAccrualRepository) GetNonFinalOrders(ctx context.Context) ([]entity.Order, error) {
 	orders := []entity.Order{}
-
-	var lastOrderNumber string
-	err := r.db.GetContext(ctx, &lastOrderNumber, "SELECT number FROM orders ORDER BY number DESC LIMIT 1")
-	if err != nil {
-		return nil, fmt.Errorf("ошибка при получении последнего номера заказа: %w", err)
-	}
-
-	if prevOrderNumber == lastOrderNumber || prevOrderNumber == "" {
-		prevOrderNumber = "0"
-	}
-
 	query := `
-		SELECT number, status, uploaded_at
-		FROM orders
-		WHERE status NOT IN ($1, $2) AND CAST(number AS BIGINT) > CAST($3 AS BIGINT)
-		LIMIT $4`
-	err = r.db.SelectContext(
-		ctx,
-		&orders,
-		query,
-		domain.StatusInvalid,
-		domain.StatusProcessed,
-		prevOrderNumber,
-		limit,
-	)
+		SELECT id, user_id, number, status, uploaded_at 
+		FROM orders 
+		WHERE status NOT IN ($1, $2)`
+	err := r.db.SelectContext(ctx, &orders, query, domain.StatusInvalid, domain.StatusProcessed)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка при запросе на получение незавершённых заказов: %w", err)
+		return nil, fmt.Errorf("ошибка при запросе на получения незавершённых заказов: %w", err)
 	}
 	return orders, nil
 }

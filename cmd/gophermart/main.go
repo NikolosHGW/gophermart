@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/NikolosHGW/gophermart/internal/app/handler"
 	"github.com/NikolosHGW/gophermart/internal/app/service"
@@ -15,6 +17,8 @@ import (
 	"github.com/NikolosHGW/gophermart/pkg/logger"
 	"go.uber.org/zap"
 )
+
+const requestIntervalSeconds = 3
 
 func main() {
 	if err := run(); err != nil {
@@ -51,7 +55,12 @@ func run() error {
 	orderService := service.NewOrderService(orderRepo, myLogger)
 	balanceService := service.NewBalanceService(loyaltyPointRepo, withdrawalRepo, myLogger)
 	withdrawalService := service.NewWithdrawalService(withdrawalRepo)
-	accrualService := service.NewAccrual(accrualRepo, myLogger, config.AccrualSystemAddress)
+	accrualService := service.NewAccrualService(
+		accrualRepo,
+		myLogger,
+		config.AccrualSystemAddress,
+		requestIntervalSeconds*time.Second,
+	)
 
 	handlers := &handler.Handlers{
 		UserHandler:       handler.NewUserHandler(userService, myLogger),
@@ -70,7 +79,12 @@ func run() error {
 
 	myLogger.Info("Running server", zap.String("address", config.GetRunAddress()))
 
-	accrualService.StartAccrual()
+	go func() {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		accrualService.Run(ctx)
+	}()
 
 	err = http.ListenAndServe(config.GetRunAddress(), r)
 
