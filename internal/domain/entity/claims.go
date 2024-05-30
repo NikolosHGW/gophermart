@@ -1,4 +1,4 @@
-package usecase
+package entity
 
 import "github.com/golang-jwt/jwt/v4"
 

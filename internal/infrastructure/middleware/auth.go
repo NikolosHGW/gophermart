@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/NikolosHGW/gophermart/internal/domain"
-	"github.com/NikolosHGW/gophermart/internal/domain/usecase"
+	"github.com/NikolosHGW/gophermart/internal/domain/entity"
 	"github.com/golang-jwt/jwt/v4"
 )
 
@@ -50,7 +50,7 @@ func NewAuthMiddleware(secretKey string) *AuthMiddleware {
 }
 
 func GetUserID(tokenString string, secretKey string) int {
-	claims := &usecase.Claims{}
+	claims := &entity.Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims,
 		func(t *jwt.Token) (interface{}, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {

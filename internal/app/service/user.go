@@ -76,7 +76,7 @@ func (s *UserService) Authenticate(ctx context.Context, login, password string) 
 }
 
 func (s *UserService) GenerateJWT(user *entity.User) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, usecase.Claims{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, entity.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(TokenExp)),
 		},
